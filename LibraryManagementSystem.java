@@ -5,15 +5,17 @@ package cps2232;
 	import java.util.Arrays;
 	import java.util.*;
 
-	class Book implements Comparable<Book> {
+	class Book implements Comparable<Book>, Serializable {
 	    String title;
 	    String author;
 	    int[] location;
+	    int quantity;
 
-	    public Book(String title, String author,int[]location) {
+	    public Book(String title, String author,int[]location, int quantity) {
 	        this.title = title;
 	        this.author = author;
 	        this.location = location;
+	        this.quantity =quantity;
 	    }
 
 	    @Override
@@ -23,7 +25,7 @@ package cps2232;
 
 	    @Override
 	    public String toString() {
-	        return "Title: " + title + ", Author: " + author;
+	        return "Title: " + title + ", Author: " + author + ", quantity: " + quantity;
 	    }
 	}
 
@@ -37,15 +39,16 @@ package cps2232;
 	        bookHashMap = new HashMap<>();
 	    }
 
-	    public void addBook(String title, String author,int[] location) {
-	        Book newBook = new Book(title, author, location);
+	    public void addBook(String title, String author,int[] location, int quantity) {
+	        Book newBook = new Book(title, author, location, quantity);
 	        bookBST.put(title, newBook);
 	        bookHashMap.put(title, newBook);
 	    }
 
 	    public int[] getBook(String title) {
-	        return bookHashMap.get(title).location;
+	            return bookHashMap.get(title).location;
 	    }
+
 
 	    public void displayBooksSorted() {
 	        List<Book> books = new ArrayList<>(bookBST.values());
@@ -54,6 +57,24 @@ package cps2232;
 	            System.out.println(book);
 	        }
 	    }
+	    
+	    public boolean borrowBook(String title) {
+	        if (bookHashMap.get(title).quantity > 0) {
+	        	bookHashMap.get(title).quantity--;
+	            return true;
+	        }
+	        return false;
+	    }
+	    
+	    public boolean returnBook(String title) {
+         bookHashMap.get(title).quantity++;
+	           return true;
+	    }
+	    
+	    public int bookquabtity(String title) {
+	         return bookHashMap.get(title).quantity;
+		           
+		    }
 
 	    public void saveLibraryStateToFile(String fileName) {
 	        try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(fileName))) {
@@ -86,7 +107,9 @@ package cps2232;
 	            System.out.println("3. Display Books (Sorted)");
 	            System.out.println("4. Save Library State to File");
 	            System.out.println("5. Load Library State from File");
-	            System.out.println("6. Exit");
+	            System.out.println("6. Borrow book");
+	            System.out.println("7. return book");
+	            System.out.println("8. Exit");
 
 	            System.out.print("Enter your choice: ");
 	            int choice = scanner.nextInt();
@@ -98,13 +121,16 @@ package cps2232;
 	                    String title = scanner.nextLine();
 	                    System.out.print("Enter author name: ");
 	                    String author = scanner.nextLine();
+	                    Scanner sc = new Scanner(System.in);
+	                    System.out.print("Enter quantity: " );
+	                    int quantity = sc.nextInt();
 	                    System.out.print("Enter location(shelf number and row number): " );
 	                    Scanner in = new Scanner(System.in);
 	                    int[] location = new int[2];
 	                    for(int i =0; i<2;i++) {
 	                    location[i]=in.nextInt();
 	                    }
-	                    librarySystem.addBook(title, author, location);
+	                    librarySystem.addBook(title, author, location,quantity);
 	                    System.out.println("Book added successfully!");
 	                    break;
 	                case 2:
@@ -112,6 +138,7 @@ package cps2232;
 	                    String searchTitle = scanner.nextLine();
 	                    try{int[]newLocation = librarySystem.getBook(searchTitle);
 	                    System.out.println("Book found, Location: " + Arrays.toString(newLocation));
+	                    System.out.println("The quantity of the book " + searchTitle +" is: "+librarySystem.bookquabtity(searchTitle));
 	                    }catch(NullPointerException e) {
 	                    	System.out.println("book not found!");
 	                    }
@@ -133,6 +160,27 @@ package cps2232;
 	                    System.out.println("Library state loaded from file successfully!");
 	                    break;
 	                case 6:
+	                    System.out.print("Enter the file name to borrow: ");
+	                    String title1 = scanner.nextLine();
+	                    try{if(librarySystem.borrowBook(title1)) {
+	                    	System.out.println("Borrow the book successfully!");}
+	                    	else {
+	                    		System.out.println("Borrow failed");
+	                    	};}
+	                    catch(NullPointerException e) {
+	                    	System.out.println("book not found!");
+	                    }
+	                    
+	                    break;
+	                case 7:
+	                    System.out.print("Enter the file name to return: ");
+	                    String title2 = scanner.nextLine();
+	                    try{librarySystem.returnBook(title2);}
+	                    catch(NullPointerException e) {
+	                    	System.out.println("book not found!");
+	                    }
+	                    break;
+	                case 8:
 	                    System.out.println("Exiting the Library Management System. Goodbye!");
 	                    System.exit(0);
 	                    break;
@@ -142,4 +190,5 @@ package cps2232;
 	        }
 	    }
 	}
+
 
