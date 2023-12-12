@@ -4,7 +4,7 @@ package cps2232;
 	import java.io.*;
 	import java.util.Arrays;
 	import java.util.*;
-
+         
 	class Book implements Comparable<Book>, Serializable {
 	    String title;
 	    String author;
@@ -17,12 +17,12 @@ package cps2232;
 	        this.location = location;
 	        this.quantity =quantity;
 	    }
-
+             rewrite the compareTo methhod
 	    @Override
 	    public int compareTo(Book other) {
 	        return this.title.compareTo(other.title);
 	    }
-
+            rewrite the toString methhod
 	    @Override
 	    public String toString() {
 	        return "Title: " + title + ", Author: " + author + ", quantity: " + quantity;
@@ -49,7 +49,7 @@ package cps2232;
 	            return bookHashMap.get(title).location;
 	    }
 
-
+              //use bubble sort to displaybooks
 	    public void displayBooksSorted() {
 	        List<Book> books = new ArrayList<>(bookBST.values());
 	        //bubble sort
@@ -124,7 +124,7 @@ package cps2232;
 	            scanner.nextLine(); // Consume the newline character
 
 	            switch (choice) {
-	                case 1:
+	                case 1: //add book
 	                    System.out.print("Enter book title: ");
 	                    String title = scanner.nextLine();
 	                    System.out.print("Enter author name: ");
@@ -141,7 +141,7 @@ package cps2232;
 	                    librarySystem.addBook(title, author, location,quantity);
 	                    System.out.println("Book added successfully!");
 	                    break;
-	                case 2:
+	                case 2: //search book, display its location, if there isn't this book, print"book not find"
 	                    System.out.print("Enter book title to search: ");
 	                    String searchTitle = scanner.nextLine();
 	                    try{int[]newLocation = librarySystem.getBook(searchTitle);
@@ -151,23 +151,23 @@ package cps2232;
 	                    	System.out.println("book not found!");
 	                    }
 	                    break;
-	                case 3:
+	                case 3: //use bubble sort to display the books
 	                    System.out.println("Books in the library (sorted by title):");
 	                    librarySystem.displayBooksSorted();
 	                    break;
-	                case 4:
+	                case 4: // Save Library State to File
 	                    System.out.print("Enter the file name to save library state: ");
 	                    String saveFileName = scanner.nextLine();
 	                    librarySystem.saveLibraryStateToFile(saveFileName);
 	                    System.out.println("Library state saved to file successfully!");
 	                    break;
-	                case 5:
+	                case 5: //Load Library State from File
 	                    System.out.print("Enter the file name to load library state from: ");
 	                    String loadFileName = scanner.nextLine();
 	                    librarySystem.loadLibraryStateFromFile(loadFileName);
 	                    System.out.println("Library state loaded from file successfully!");
 	                    break;
-	                case 6:
+	                case 6://Borrow book, if there isn't this book, retrun book not found
 	                    System.out.print("Enter the file name to borrow: ");
 	                    String title1 = scanner.nextLine();
 	                    try{if(librarySystem.borrowBook(title1)) {
@@ -180,7 +180,7 @@ package cps2232;
 	                    }
 	                    
 	                    break;
-	                case 7:
+	                case 7://Return book, if there isn't this book, retrun book not found
 	                    System.out.print("Enter the file name to return: ");
 	                    String title2 = scanner.nextLine();
 	                    try{librarySystem.returnBook(title2);}
@@ -188,12 +188,12 @@ package cps2232;
 	                    	System.out.println("book not found!");
 	                    }
 	                    break;
-	                case 8:
+	                case 8: //exit
 	                    System.out.println("Exiting the Library Management System. Goodbye!");
 	                    System.exit(0);
 	                    break;
-	                default:
-	                    System.out.println("Invalid choice. Please enter a number between 1 and 6.");
+	                default: //when type invalied number, Prompt user
+	                    System.out.println("Invalid choice. Please enter a number between 1 and 8.");
 	            }
 	        }
 	    }
