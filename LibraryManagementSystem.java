@@ -145,7 +145,7 @@ package cps2232;
 	                    System.out.print("Enter book title to search: ");
 	                    String searchTitle = scanner.nextLine();
 	                    try{int[]newLocation = librarySystem.getBook(searchTitle);
-	                    System.out.println("Book found, Location: " + Arrays.toString(newLocation));
+	                    System.out.println("Book found, Location: the " + newLocation[0]+"th shelf " +newLocation[0]+"th row" );
 	                    System.out.println("The quantity of the book " + searchTitle +" is: "+librarySystem.bookquabtity(searchTitle));
 	                    }catch(NullPointerException e) {
 	                    	System.out.println("book not found!");
