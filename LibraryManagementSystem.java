@@ -1,23 +1,27 @@
 package com.example.demo;
 
 import javafx.application.Application;
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import javafx.scene.control.TextInputDialog;
 
 import java.io.*;
 import java.util.*;
 
-class Book implements Comparable<Book> {
+class Book implements Comparable<Book>, Serializable {
     String title;
     String author;
     int[] location;
+    int quantity;
 
-    public Book(String title, String author, int[] location) {
+    public Book(String title, String author, int[] location, int quantity) {
         this.title = title;
         this.author = author;
         this.location = location;
+        this.quantity = quantity;
     }
 
     @Override
@@ -27,42 +31,82 @@ class Book implements Comparable<Book> {
 
     @Override
     public String toString() {
-        return "Title: " + title + ", Author: " + author;
+        return "Title: " + title + ", Author: " + author + ", Quantity: " + quantity;
+    }
+
+    public String getTitle() {
+        return title;
     }
 }
 
 class LibrarySystem {
-    private TreeMap<String, Book> bookBST; // Binary Search Tree to store books sorted by title
-    private HashMap<String, Book> bookHashMap; // HashMap for efficient retrieval using book title
+    private TreeMap<String, Book> bookBST;
+    private HashMap<String, Book> bookHashMap;
 
     public LibrarySystem() {
         bookBST = new TreeMap<>();
         bookHashMap = new HashMap<>();
     }
-
-    public void addBook(String title, String author, int[] location) {
-        Book newBook = new Book(title, author, location);
+    public TreeMap<String, Book> getBookBST() {
+        return bookBST;
+    }
+    public void addBook(String title, String author, int[] location, int quantity) {
+        Book newBook = new Book(title, author, location, quantity);
         bookBST.put(title, newBook);
         bookHashMap.put(title, newBook);
     }
 
     public int[] getBook(String title) {
-        return Optional.ofNullable(bookHashMap.get(title))
-                .map(book -> book.location)
-                .orElse(null);
+        return bookHashMap.get(title).location;
     }
 
-    public List<Book> getAllBooksSorted() {
-        return new ArrayList<>(bookBST.values());
-    }
-
-    public void saveLibraryStateToFile(String fileName) {
-        try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(fileName))) {
-            outputStream.writeObject(bookBST);
-        } catch (IOException e) {
-            e.printStackTrace();
+    public void displayBooksSorted() {
+        List<Book> books = new ArrayList<>(bookBST.values());
+        // 冒泡排序
+        int n = books.size();
+        for (int i = 0; i < n - 1; i++) {
+            for (int j = 0; j < n - i - 1; j++) {
+                if (books.get(j).compareTo(books.get(j + 1)) > 0) {
+                    // 交换元素位置
+                    Book temp = books.get(j);
+                    books.set(j, books.get(j + 1));
+                    books.set(j + 1, temp);
+                }
+            }
+        }
+        for (Book book : books) {
+            System.out.println(book);
         }
     }
+
+    public boolean borrowBook(String title) {
+        if (bookHashMap.get(title).quantity > 0) {
+            bookHashMap.get(title).quantity--;
+            return true;
+        }
+        return false;
+    }
+
+    public boolean returnBook(String title) {
+        bookHashMap.get(title).quantity++;
+        return true;
+    }
+
+    public int bookQuantity(String title) {
+        return bookHashMap.get(title).quantity;
+    }
+
+    public void saveLibraryStateToFile(String fileName)  {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
+                for (Book book : bookBST.values()) {
+                    writer.write(book.title + "," + book.author + "," + Arrays.toString(book.location) + "," + book.quantity);
+                    writer.newLine();
+                }
+                System.out.println("Library state saved to CSV file successfully!");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
     @SuppressWarnings("unchecked")
     public void loadLibraryStateFromFile(String fileName) {
@@ -77,7 +121,9 @@ class LibrarySystem {
 
 public class LibraryManagementSystem extends Application {
     private LibrarySystem librarySystem;
-    private TextArea outputTextArea;
+    private Stage primaryStage;
+    private TextArea resultTextArea;
+    private TextField userInputField;
 
     public static void main(String[] args) {
         launch(args);
@@ -85,152 +131,159 @@ public class LibraryManagementSystem extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        librarySystem = new LibrarySystem();
-        outputTextArea = new TextArea();
-        outputTextArea.setEditable(false);
+        this.primaryStage = primaryStage;
+        this.librarySystem = new LibrarySystem();
+        setupUI();
+    }
 
-        BorderPane root = createRootPane();
+    private void setupUI() {
+        BorderPane borderPane = new BorderPane();
+        VBox buttonBox = createButtonBox();
+        HBox inputResultBox = createInputResultBox();
 
-        Scene scene = new Scene(root, 600, 400);
-        primaryStage.setTitle("Library Management System");
+        borderPane.setCenter(inputResultBox);
+        borderPane.setRight(buttonBox);
+
+        Scene scene = new Scene(borderPane, 800, 600);
         primaryStage.setScene(scene);
+        primaryStage.setTitle("Library Management System");
         primaryStage.show();
     }
 
-    private BorderPane createRootPane() {
-        BorderPane root = new BorderPane();
-        root.setTop(createMenu());
-        root.setCenter(outputTextArea);
-        return root;
+    private VBox createButtonBox() {
+        Button addBookButton = new Button("Add Book");
+        Button searchBookButton = new Button("Search Book");
+        Button displayBooksButton = new Button("Display Books (Sorted)");
+        Button saveButton = new Button("Save Library State");
+        Button loadButton = new Button("Load Library State");
+        Button borrowButton = new Button("Borrow Book");
+        Button returnButton = new Button("Return Book");
+        Button exitButton = new Button("Exit");
+
+        addBookButton.setOnAction(e -> handleAddBook());
+        searchBookButton.setOnAction(e -> handleSearchBook());
+        displayBooksButton.setOnAction(e -> handleDisplayBooks());
+        saveButton.setOnAction(e -> handleSaveLibraryState());
+        loadButton.setOnAction(e -> handleLoadLibraryState());
+        borrowButton.setOnAction(e -> handleBorrowBook());
+        returnButton.setOnAction(e -> handleReturnBook());
+        exitButton.setOnAction(e -> primaryStage.close());
+
+        VBox buttonBox = new VBox(10, addBookButton, searchBookButton, displayBooksButton,
+                saveButton, loadButton, borrowButton, returnButton, exitButton);
+        buttonBox.setPadding(new Insets(20));
+        return buttonBox;
     }
 
-    private MenuBar createMenu() {
-        MenuBar menuBar = new MenuBar();
-        Menu fileMenu = new Menu("File");
-        MenuItem exitMenuItem = new MenuItem("Exit");
-        exitMenuItem.setOnAction(event -> exitSystem());
-        fileMenu.getItems().add(exitMenuItem);
+    private HBox createInputResultBox() {
+        userInputField = new TextField();
+        resultTextArea = new TextArea();
 
-        Menu bookMenu = new Menu("Book");
-        MenuItem addBookMenuItem = new MenuItem("Add Book");
-        addBookMenuItem.setOnAction(event -> addBook());
-        MenuItem searchBookMenuItem = new MenuItem("Search Book");
-        searchBookMenuItem.setOnAction(event -> searchBook());
-        MenuItem displayBooksMenuItem = new MenuItem("Display Books (Sorted)");
-        displayBooksMenuItem.setOnAction(event -> displayBooks());
-        bookMenu.getItems().addAll(addBookMenuItem, searchBookMenuItem, displayBooksMenuItem);
-
-        Menu libraryMenu = new Menu("Library");
-        MenuItem saveLibraryStateMenuItem = new MenuItem("Save Library State to File");
-        saveLibraryStateMenuItem.setOnAction(event -> saveLibraryState());
-        MenuItem loadLibraryStateMenuItem = new MenuItem("Load Library State from File");
-        loadLibraryStateMenuItem.setOnAction(event -> loadLibraryState());
-        libraryMenu.getItems().addAll(saveLibraryStateMenuItem, loadLibraryStateMenuItem);
-
-        menuBar.getMenus().addAll(fileMenu, bookMenu, libraryMenu);
-        return menuBar;
+        HBox inputResultBox = new HBox(10, userInputField, resultTextArea);
+        inputResultBox.setPadding(new Insets(20));
+        return inputResultBox;
     }
 
-    private void addBook() {
+    private void handleAddBook() {
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Add Book");
-        dialog.setHeaderText(null);
-        dialog.setContentText("Enter book title:");
+        dialog.setHeaderText("Please enter book information:");
+        dialog.setContentText("Title:");
 
-        Optional<String> result = dialog.showAndWait();
-        result.ifPresent(title -> {
-            TextInputDialog authorDialog = new TextInputDialog();
-            authorDialog.setTitle("Add Book");
-            authorDialog.setHeaderText(null);
-            authorDialog.setContentText("Enter author name:");
-
-            Optional<String> authorResult = authorDialog.showAndWait();
+        Optional<String> titleResult = dialog.showAndWait();
+        titleResult.ifPresent(title -> {
+            dialog.setContentText("Author:");
+            Optional<String> authorResult = dialog.showAndWait();
             authorResult.ifPresent(author -> {
-                TextInputDialog locationDialog = new TextInputDialog();
-                locationDialog.setTitle("Add Book");
-                locationDialog.setHeaderText(null);
-                locationDialog.setContentText("Enter location (shelf number and row number, separated by space):");
-
-                Optional<String> locationResult = locationDialog.showAndWait();
-                locationResult.ifPresent(location -> {
-                    String[] locationArray = location.split(" ");
-                    if (locationArray.length == 2) {
-                        try {
-                            int[] locationInt = {Integer.parseInt(locationArray[0]), Integer.parseInt(locationArray[1])};
-                            librarySystem.addBook(title, author, locationInt);
-                            appendTextToOutput("Book added successfully!");
-                        } catch (NumberFormatException e) {
-                            appendTextToOutput("Invalid location format. Please enter numbers.");
-                        }
-                    } else {
-                        appendTextToOutput("Invalid location format. Please enter shelf number and row number separated by space.");
+                dialog.setContentText("Location (shelf number and row number):");
+                Optional<String> locationResult = dialog.showAndWait();
+                locationResult.ifPresent(locationString -> {
+                    try {
+                        int[] location = Arrays.stream(locationString.split(" "))
+                                .mapToInt(Integer::parseInt)
+                                .toArray();
+                        librarySystem.addBook(title, author, location, 1); // Assuming quantity is 1 by default
+                        resultTextArea.setText("Book added successfully!");
+                    } catch (Exception e) {
+                        resultTextArea.setText("Error adding book. Please check your input.");
                     }
                 });
             });
         });
     }
 
-    private void searchBook() {
-        TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Search Book");
-        dialog.setHeaderText(null);
-        dialog.setContentText("Enter book title to search:");
-
-        Optional<String> result = dialog.showAndWait();
-        result.ifPresent(title -> {
-            int[] location = librarySystem.getBook(title);
-            if (location != null) {
-                appendTextToOutput("Book found, Location: " + Arrays.toString(location));
-            } else {
-                appendTextToOutput("Book not found!");
-            }
-        });
-    }
-
-    private void displayBooks() {
-        List<Book> books = librarySystem.getAllBooksSorted();
-        if (!books.isEmpty()) {
-            appendTextToOutput("Books in the library (sorted by title):");
-            for (Book book : books) {
-                appendTextToOutput(book.toString());
-            }
-        } else {
-            appendTextToOutput("No books in the library.");
+    private void handleSearchBook() {
+        String title = userInputField.getText();
+        try {
+            int[] newLocation = librarySystem.getBook(title);
+            resultTextArea.setText("Book found, Location: the " + newLocation[0] + "th shelf " + newLocation[0] + "th row\n" +
+                    "The quantity of the book " + title + " is: " + librarySystem.bookQuantity(title));
+        } catch (NullPointerException e) {
+            resultTextArea.setText("Book not found!");
         }
     }
 
-    private void saveLibraryState() {
+    private void handleDisplayBooks() {
+        try {
+            StringBuilder booksInfo = new StringBuilder("Books in the library (sorted by title):\n");
+            List<Book> books = new ArrayList<>(librarySystem.getBookBST().values());
+            books.sort(Comparator.comparing(Book::getTitle));
+            for (Book book : books) {
+                booksInfo.append(book).append("\n");
+            }
+            resultTextArea.setText(booksInfo.toString());
+        } catch (Exception e) {
+            resultTextArea.setText("Error displaying books.");
+        }
+    }
+
+    private void handleSaveLibraryState() {
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Save Library State");
-        dialog.setHeaderText(null);
-        dialog.setContentText("Enter the file name to save library state:");
+        dialog.setHeaderText("Enter the file name to save library state:");
 
-        Optional<String> result = dialog.showAndWait();
-        result.ifPresent(fileName -> {
-            librarySystem.saveLibraryStateToFile(fileName);
-            appendTextToOutput("Library state saved to file successfully!");
+        Optional<String> fileNameResult = dialog.showAndWait();
+        fileNameResult.ifPresent(fileName -> {
+            librarySystem.saveLibraryStateToFile("book.csv");
+            resultTextArea.setText("Library state saved to file successfully!");
         });
     }
 
-    private void loadLibraryState() {
+    private void handleLoadLibraryState() {
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Load Library State");
-        dialog.setHeaderText(null);
-        dialog.setContentText("Enter the file name to load library state from:");
+        dialog.setHeaderText("Enter the file name to load library state from:");
 
-        Optional<String> result = dialog.showAndWait();
-        result.ifPresent(fileName -> {
+        Optional<String> fileNameResult = dialog.showAndWait();
+        fileNameResult.ifPresent(fileName -> {
             librarySystem.loadLibraryStateFromFile(fileName);
-            appendTextToOutput("Library state loaded from file successfully!");
+            resultTextArea.setText("Library state loaded from file successfully!");
         });
     }
 
-    private void exitSystem() {
-        System.out.println("Exiting the Library Management System. Goodbye!");
-        System.exit(0);
+    private void handleBorrowBook() {
+        String title = userInputField.getText();
+        try {
+            if (librarySystem.borrowBook(title)) {
+                resultTextArea.setText("Borrow the book successfully!");
+            } else {
+                resultTextArea.setText("Borrow failed. Book not available.");
+            }
+        } catch (NullPointerException e) {
+            resultTextArea.setText("Book not found!");
+        }
     }
 
-    private void appendTextToOutput(String text) {
-        outputTextArea.appendText(text + "\n");
+    private void handleReturnBook() {
+        String title = userInputField.getText();
+        try {
+            if (librarySystem.returnBook(title)) {
+                resultTextArea.setText("Return the book successfully!");
+            } else {
+                resultTextArea.setText("Return failed. Book not found.");
+            }
+        } catch (NullPointerException e) {
+            resultTextArea.setText("Book not found!");
+        }
     }
 }
