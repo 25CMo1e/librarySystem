@@ -125,6 +125,8 @@ package cps2232;
 
 	            switch (choice) {
 	                case 1: //add book
+	                    case 1:
+	                    try {
 	                    System.out.print("Enter book title: ");
 	                    String title = scanner.nextLine();
 	                    System.out.print("Enter author name: ");
@@ -140,6 +142,9 @@ package cps2232;
 	                    }
 	                    librarySystem.addBook(title, author, location,quantity);
 	                    System.out.println("Book added successfully!");
+	                	}catch(InputMismatchException e) {
+	                	    System.out.println("Invalid input. Please enter a numerical value for quantity.");
+	                	}
 	                    break;
 	                case 2: //search book, display its location, if there isn't this book, print"book not find"
 	                    System.out.print("Enter book title to search: ");
