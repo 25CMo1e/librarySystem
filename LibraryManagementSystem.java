@@ -52,7 +52,15 @@ package cps2232;
 
 	    public void displayBooksSorted() {
 	        List<Book> books = new ArrayList<>(bookBST.values());
-	        Collections.sort(books);
+	        //bubble sort
+        int n = books.size();
+        for (int i = 0; i < n - 1; i++) {
+            for (int j = 0; j < n - i - 1; j++) {
+                if (books.get(j).compareTo(books.get(j + 1)) > 0) {
+                    Collections.swap(books, j, j + 1);
+                }
+            }
+        }
 	        for (Book book : books) {
 	            System.out.println(book);
 	        }
